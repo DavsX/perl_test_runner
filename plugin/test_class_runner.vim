@@ -1,10 +1,22 @@
-" Vim plugin to enable running various perl tests from vim
+" Vim plugin to enable running various perl tests from vim without the need of
+" separate terminal window
 "
-" Tests can be ran only from a Perl project directory, which is a directory
+" Copyright 2014 David Kovacs, <kovdavid@gmail.com>
+" http://github.com/DavsX
+"
+" This plugin enables to execute test files (*.t), while editing them
+" Also enables to run test for a module (*.pm), if it has a test written via
+" Test::Class
+" Test::Class test modules can be run directly too, if they have at the end
+" the following line:
+"   __PACKAGE__->runtests unless caller; #run tests if called directly
+" When running tests of a module, it enables to run only the test with the
+" same name as the current subroutine (it's name is determined using regex
+" going from the current line upwards), or even tests, whose name starts with
+" the name of the current subroutine
+"
+" Tests can be ran from a Perl project directory, which is a directory
 " containing lib/ and t/
-"
-" This plugin assumes, that the tests are written using Test::Class, however
-" traditional .t tests can be ran too
 "
 " Typical directory structure this plugin assumes is like this, assuming
 " g:test_class_path_folder is set to 'tests' and g:test_class_path_prefix is
@@ -17,12 +29,41 @@
 "       0001-test.t
 "       tests/
 "           Test/
-"               Plugin.pm
+"               My/
+"                   Plugin.pm
 "
-" This plugin enables to run tests right inside Vim without the need to open a
-" separate terminal for tests (*.t) inside the 't/' directory, for modules
-" (*.pm) inside 'lib/' directory and for their corresponding Test::Class test
-" modules (inside tests/Test/)
+"   -Typical scenario:
+"   -When editing lib/My/Plugin.pm
+"       -ProveTestAll runs all the tests inside t/
+"       -ProveTestFile/PerlTestFile runs t/tests/Test/My/Plugin.pm
+"       -ProveTestSub/PerlTestSub runs t/tests/Test/My/Plugin.pm and sets the
+"        $TEST_METHOD environmental variable to the name of the current
+"        subroutine
+"       -ProveTestSubLike/PerlTestSubLike runs t/tests/Test/My/Plugin.pm and sets the
+"        $TEST_METHOD environmental variable to: current_sub_name . '.*'
+"   -When editing t/tests/Test/My/Plugin.pm
+"       -ProveTestAll runs all the tests inside t/
+"       -ProveTestFile/PerlTestFile runs t/tests/Test/My/Plugin.pm
+"       -ProveTestSub/PerlTestSub runs t/tests/Test/My/Plugin.pm and sets the
+"        $TEST_METHOD environmental variable to the name of the current
+"        subroutine
+"       -ProveTestSubLike/PerlTestSubLike runs t/tests/Test/My/Plugin.pm and sets the
+"        $TEST_METHOD environmental variable to: current_sub_name . '.*'
+"   -When editing t/0001-test.t
+"       -ProveTestAll runs all the tests inside t/
+"       -ProveTestFile/PerlTestFile runs t/0001-test.t
+"
+"   Commands starting with Prove runs the tests via prove, which gives more
+"   compace results
+"   Commands starting with Perl runs the tests via perl, giving more detailed
+"   results
+"
+"   Subroutine names are parsed with regex from the current line upwards.
+"
+"   You can map these commands to any key:
+"       nnoremap <leader>ptt PerlTestFile
+"
+"   COMMANDS
 "
 " ProveTestAll
 "   -it will run the 'prove t/' command, thus running all the tests inside t/
@@ -53,11 +94,6 @@
 "   current file, which starts with the name of the subroutine
 "   -!It changes the current directory to the project root (where t/ and lib/
 "   are)
-"
-" Subroutine names are parsed with regex from the current line upwards.
-"
-" You can map these functions to any key:
-"   nnoremap <leader>ptt PerlTestFile
 "
 " CONFIGURATION
 "

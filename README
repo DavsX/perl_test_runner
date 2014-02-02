@@ -1,0 +1,122 @@
+Test::Class runner
+
+Vim plugin to enable running various perl tests from vim without the need of
+separate terminal window
+
+This plugin enables to execute test files (*.t), while editing them
+Also enables to run test for a module (*.pm), if it has a test written via
+Test::Class
+Test::Class test modules can be run directly too, if they have at the end
+the following line:
+  __PACKAGE__->runtests unless caller; #run tests if called directly
+When running tests of a module, it enables to run only the test with the
+same name as the current subroutine (it's name is determined using regex
+going from the current line upwards), or even tests, whose name starts with
+the name of the current subroutine
+
+Tests can be ran from a Perl project directory, which is a directory
+containing lib/ and t/
+
+Typical directory structure this plugin assumes is like this, assuming
+g:test_class_path_folder is set to 'tests' and g:test_class_path_prefix is
+set to 'Test':
+  
+  -lib/
+      My/
+          Plugin.pm
+  -t/
+      0001-test.t
+      tests/
+          Test/
+              My/
+                  Plugin.pm
+
+  -Typical scenario:
+  -When editing lib/My/Plugin.pm
+      -ProveTestAll runs all the tests inside t/
+      -ProveTestFile/PerlTestFile runs t/tests/Test/My/Plugin.pm
+      -ProveTestSub/PerlTestSub runs t/tests/Test/My/Plugin.pm and sets the
+       $TEST_METHOD environmental variable to the name of the current
+       subroutine
+      -ProveTestSubLike/PerlTestSubLike runs t/tests/Test/My/Plugin.pm and sets the
+       $TEST_METHOD environmental variable to: current_sub_name . '.*'
+  -When editing t/tests/Test/My/Plugin.pm
+      -ProveTestAll runs all the tests inside t/
+      -ProveTestFile/PerlTestFile runs t/tests/Test/My/Plugin.pm
+      -ProveTestSub/PerlTestSub runs t/tests/Test/My/Plugin.pm and sets the
+       $TEST_METHOD environmental variable to the name of the current
+       subroutine
+      -ProveTestSubLike/PerlTestSubLike runs t/tests/Test/My/Plugin.pm and sets the
+       $TEST_METHOD environmental variable to: current_sub_name . '.*'
+  -When editing t/0001-test.t
+      -ProveTestAll runs all the tests inside t/
+      -ProveTestFile/PerlTestFile runs t/0001-test.t
+
+  Commands starting with Prove runs the tests via prove, which gives more
+  compace results
+  Commands starting with Perl runs the tests via perl, giving more detailed
+  results
+
+  Subroutine names are parsed with regex from the current line upwards.
+
+  You can map these commands to any key:
+      nnoremap <leader>ptt PerlTestFile
+
+  COMMANDS
+
+ProveTestAll
+  -it will run the 'prove t/' command, thus running all the tests inside t/
+  -!It changes the current directory to the project root (where t/ and lib/
+  are)
+
+ProveTestFile / PerlTestFile
+  -it tests only the current file via 'prove' or 'perl'
+  -for *.t and *.pm files under 't/' it tests that file
+  -for *.pm modules inside 't/' it tests the corresponding Test::Class test
+  module inside 't/tests/Test'
+  -!It changes the current directory to the project root (where t/ and lib/
+  are)
+
+  *NOTE: For a Test::Class test module, you should put this at the end of the 
+  file (right before 1;) so it can be called as standalone test:
+  __PACKAGE__->runtests unless caller;
+
+ProveTestSub / PerlTestSub
+  -it test only the current subroutine in the current file
+  -this assumes, that there is a test with the same name as the subroutine
+  -works for *.pm modules inside 'lib/' and 't/tests/Test/' as well
+  -!It changes the current directory to the project root (where t/ and lib/
+  are)
+
+ProveTestSubLike / PerlTestSubLike
+  -same, as ProveTestSub/PerlTestSub, but it runs all the tests for the
+  current file, which starts with the name of the subroutine
+  -!It changes the current directory to the project root (where t/ and lib/
+  are)
+
+CONFIGURATION
+
+  g:test_class_perl_args
+
+      Arguments for the perl executable. Default is:
+          let g:test_class_perl_args = '-Ilib -It/lib'
+
+  g:test_class_prove_args
+
+      Arguments for the prove executable. Default is:
+          let g:test_class_prove_args = '-Ilib -It/lib'
+
+  g:test_class_path_folder
+
+      The name of the directory inside 't/', where the Test::Class test
+      modules are. Default is:
+          let g:test_class_path_folder = 'tests'
+
+  g:test_class_path_prefix
+
+      This prefix will be used for executing tests. This assumes that there
+      is a directory with this name inside the test_class_path_folder.
+      Default is:
+          let g:test_class_path_prefix = 'Test'
+
+
