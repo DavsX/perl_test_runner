@@ -1,4 +1,89 @@
 " Vim plugin to enable running various perl tests from vim
+"
+" Tests can be ran only from a Perl project directory, which is a directory
+" containing lib/ and t/
+"
+" This plugin assumes, that the tests are written using Test::Class, however
+" traditional .t tests can be ran too
+"
+" Typical directory structure this plugin assumes is like this, assuming
+" g:test_class_path_folder is set to 'tests' and g:test_class_path_prefix is
+" set to 'Test':
+"   
+"   -lib/
+"       My/
+"           Plugin.pm
+"   -t/
+"       0001-test.t
+"       tests/
+"           Test/
+"               Plugin.pm
+"
+" This plugin enables to run tests right inside Vim without the need to open a
+" separate terminal for tests (*.t) inside the 't/' directory, for modules
+" (*.pm) inside 'lib/' directory and for their corresponding Test::Class test
+" modules (inside tests/Test/)
+"
+" ProveTestAll
+"   -it will run the 'prove t/' command, thus running all the tests inside t/
+"   -!It changes the current directory to the project root (where t/ and lib/
+"   are)
+"
+" ProveTestFile / PerlTestFile
+"   -it tests only the current file via 'prove' or 'perl'
+"   -for *.t and *.pm files under 't/' it tests that file
+"   -for *.pm modules inside 't/' it tests the corresponding Test::Class test
+"   module inside 't/tests/Test'
+"   -!It changes the current directory to the project root (where t/ and lib/
+"   are)
+"
+"   *NOTE: For a Test::Class test module, you should put this at the end of the 
+"   file (right before 1;) so it can be called as standalone test:
+"   __PACKAGE__->runtests unless caller;
+"
+" ProveTestSub / PerlTestSub
+"   -it test only the current subroutine in the current file
+"   -this assumes, that there is a test with the same name as the subroutine
+"   -works for *.pm modules inside 'lib/' and 't/tests/Test/' as well
+"   -!It changes the current directory to the project root (where t/ and lib/
+"   are)
+"
+" ProveTestSubLike / PerlTestSubLike
+"   -same, as ProveTestSub/PerlTestSub, but it runs all the tests for the
+"   current file, which starts with the name of the subroutine
+"   -!It changes the current directory to the project root (where t/ and lib/
+"   are)
+"
+" Subroutine names are parsed with regex from the current line upwards.
+"
+" You can map these functions to any key:
+"   nnoremap <leader>ptt PerlTestFile
+"
+" CONFIGURATION
+"
+"   g:test_class_perl_args
+"
+"       Arguments for the perl executable. Default is:
+"           let g:test_class_perl_args = '-Ilib -It/lib'
+"
+"   g:test_class_prove_args
+"
+"       Arguments for the prove executable. Default is:
+"           let g:test_class_prove_args = '-Ilib -It/lib'
+"
+"   g:test_class_path_folder
+"
+"       The name of the directory inside 't/', where the Test::Class test
+"       modules are. Default is:
+"           let g:test_class_path_folder = 'tests'
+"
+"   g:test_class_path_prefix
+"
+"       This prefix will be used for executing tests. This assumes that there
+"       is a directory with this name inside the test_class_path_folder.
+"       Default is:
+"           let g:test_class_path_prefix = 'Test'
+"
 
 if exists('g:loaded_test_class_runner')
     finish
@@ -15,7 +100,7 @@ if !exists('g:test_class_prove_args')
 endif
 
 if !exists('g:test_class_path_folder')
-    let g:test_class_path_folder = ''
+    let g:test_class_path_folder = 'tests'
 else 
     let g:test_class_path_folder = substitute(g:test_class_path_folder, '^/', '', '')
     let g:test_class_path_folder = substitute(g:test_class_path_folder, '/$', '', '')
@@ -60,7 +145,6 @@ function! s:Path_contains_test_class(path)
     return a:path =~# '/t/' . g:test_class_path
 endfunction
 " }}}
-
 
 " Get_path functions {{{
 function! s:Get_test_class_path_for_module(path)
