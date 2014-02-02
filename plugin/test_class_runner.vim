@@ -5,6 +5,7 @@ if exists('g:loaded_test_class_runner')
 endif
 let g:loaded_test_class_runner = 1
 
+" Plugin settings {{{
 if !exists('g:test_class_perl_args')
     let g:test_class_perl_args = '-Ilib -It/lib'
 endif
@@ -14,9 +15,15 @@ if !exists('g:test_class_prove_args')
 endif
 
 if !exists('g:test_class_path')
-    let g:test_class_path = 't/Test/'
+    let g:test_class_path = 'Test/'
+else 
+    let g:test_class_path = substitute(g:test_class_path, '^/', '', '')
+    let g:test_class_path = substitute(g:test_class_path, '/$', '', '')
+    let g:test_class_path = g:test_class_path . '/'
 endif
+" }}}
 
+" Path query functions {{{
 function! s:Path_inside_perl_project(path)
     return a:path =~# '^' . '.\+' . '/\(t\|lib\)/' . '.\+'
 endfunction
@@ -30,23 +37,29 @@ function! s:Path_contains_lib(path)
 endfunction
 
 function! s:Path_contains_test_class_path(path)
-    return a:path =~# '/' . g:test_class_path
+    return a:path =~# '/t/' . g:test_class_path
 endfunction
+" }}}
 
+" Get_path functions {{{
 function! s:Get_test_class_path_for_module(path)
-    return substitute(a:path,"/lib/","/" . g:test_class_path ,"")
+    " /some/path/lib/X/Y.pm => /some/path/t/g:test_class_path/X/Y.pm 
+    return substitute(a:path, "/lib/", "/t/".g:test_class_path , "")
 endfunction
 
 function! s:Get_path_for_module(path)
     if s:Path_contains_test_class_path(a:path)
+        " /some/path/t/g:test_class_path/X/Y.pm => /some/path/t/g:test_class_path/X/Y.pm 
         return a:path
     elseif s:Path_contains_lib(a:path)
+        " /some/path/lib/X/Y.pm => /some/path/t/g:test_class_path/X/Y.pm 
         return s:Get_test_class_path_for_module(a:path)
     else
-        echo "ERROR! .pm files are supported only in ". g:test_class_path ." and lib/"
+        echo "ERROR! .pm files are supported only in t/". g:test_class_path ." and lib/"
     endif
 endfunction
 
+" /some/path/t/0001-test.t => /some/path/t/0001-test.t
 function! s:Get_path_for_test(path)
     if s:Path_contains_t(a:path)
         return a:path
@@ -56,19 +69,23 @@ function! s:Get_path_for_test(path)
 endfunction
 
 function! s:Get_path_for(path, ext)
+    let l:path = 0
     if a:ext ==? 'pm'
         let l:path = s:Get_path_for_module(a:path)
     elseif a:ext ==? 't'
         let l:path = s:Get_path_for_test(a:path)
     else
         echo "ERROR! Only .pm and .t files are supported"
-        let l:path = 0
     endif
     return l:path
 endfunction
+" }}}
 
+" Project root functions {{{
 function! s:Get_project_root(path)
-    return substitute(a:path, '/\(lib\|t\)/\(.*\)$',"/", "")
+    " /some/path/lib/X/Y.pm => /some/path/
+    "return substitute(a:path, '/\(lib\|t\)/\(.*\)$',"/", "")
+    return substitute(a:path, '\v/(lib|t)/(.*)$',"/", "")
 endfunction
 
 function! s:Cd_to_root(path)
@@ -80,10 +97,9 @@ function! s:Cd_to_root(path)
         echo "ERROR! Directory does not exists: " . l:root
     endif
 endfunction
+" }}}
 
-command! PerlTestFile :call PerlTestFile()
-command! ProveTestFile :call ProveTestFile()
-
+" function s:RunTestFile {{{
 function! s:RunTestFile(tool)
     write
     let l:path = expand('%:p')
@@ -98,13 +114,33 @@ function! s:RunTestFile(tool)
             else
                 let l:cmd = ":!unbuffer prove " . g:test_class_prove_args . " " . l:path
             endif
+
             silent !clear
             execute l:cmd
         else
-            echo "ERROR! Could not process: " . l:path
+            echo "ERROR! Could not find root: " . l:path
         endif
     else
-        echo "ERROR! Invalid path: ".l:path
+        echo "ERROR! Path not inside Perl project directory: " . l:path
+    endif
+endfunction
+" }}}
+
+function! ProveTestAll()
+    write
+    let l:path = expand('%:p')
+
+    if s:Path_inside_perl_project(l:path)
+        if s:Cd_to_root(l:path)
+            let l:cmd = ":!unbuffer prove " . g:test_class_prove_args . " t/"
+
+            silent !clear
+            execute l:cmd
+        else
+            echo "ERROR! Could not find root: " . l:path
+        endif
+    else
+        echo "ERROR! Path not inside Perl project directory: " . l:path
     endif
 endfunction
 
@@ -118,7 +154,82 @@ function! PerlTestFile()
     call s:RunTestFile('perl')
 endfunction
 
-"echo s:Get_project_root('/home/davs/t/someting')
-"call s:Cd_to_root('/home/davs/t/something')
-"pwd
-"echo s:Get_path_for('/home/davs/t/tests/Test/IK4/Reminder/ResultClass/Stuff.pm','pm')
+function! s:Match_sub_name(line)
+    let l:list = matchlist(a:line, '\v^\w*sub ([0-9a-zA-Z_]+)')
+    if !empty(l:list)
+        return l:list[1]
+    endif
+    return ""
+endfunction
+
+function! s:Get_sub_name()
+    let l:line_num = line(".")
+    let l:subname = ""
+    while l:line_num >= 0
+        let l:line = getline(l:line_num)
+
+        let l:subname = s:Match_sub_name(l:line)
+        if l:subname != ""
+            break
+        endif
+        
+        let l:line_num -= 1
+    endwhile
+    return l:subname
+endfunction
+
+function! ProveTestSubLike()
+    let l:subname = s:Get_sub_name()
+    if l:subname != ""
+        let $TEST_METHOD = l:subname . '.*'
+        call s:RunTestFile('prove')
+    else
+        echo "ERROR! No subroutine found"
+    endif
+endfunction
+
+function! ProveTestSub()
+    let l:subname = s:Get_sub_name()
+    if l:subname != ""
+        let $TEST_METHOD = l:subname
+        call s:RunTestFile('prove')
+    else
+        echo "ERROR! No subroutine found"
+    endif
+endfunction
+
+function! PerlTestSubLike()
+    let l:subname = s:Get_sub_name()
+    if l:subname != ""
+        let $TEST_METHOD = l:subname . '.*'
+        call s:RunTestFile('perl')
+    else
+        echo "ERROR! No subroutine found"
+    endif
+endfunction
+
+function! PerlTestSub()
+    let l:subname = s:Get_sub_name()
+    if l:subname != ""
+        let $TEST_METHOD = l:subname
+        call s:RunTestFile('perl')
+    else
+        echo "ERROR! No subroutine found"
+    endif
+endfunction
+
+command! PerlTestFile  :call PerlTestFile()
+command! ProveTestFile :call ProveTestFile()
+
+command! ProveTestSub     :call ProveTestSub()
+command! ProveTestSubLike :call ProveTestSubLike()
+command! PerlTestSub      :call PerlTestSub()
+command! PerlTestSubLike  :call PerlTestSubLike()
+
+command! ProveTestAll :call ProveTestAll()
+
+command! Davs :call PerlTestSub()
+
+"nnoremap <leader>ptf :PerlTestFile<CR> 
+"nnoremap <leader>pts :PerlTestSub<CR> 
+"nnoremap <leader>rtf :ProveTestFile<CR> 
