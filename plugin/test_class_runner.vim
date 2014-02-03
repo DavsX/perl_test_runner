@@ -229,8 +229,10 @@ function! s:RunTestFile(tool)
 
         if s:Cd_to_root(l:path)
             if a:tool ==? 'perl'
+                let $PERL_TEST_COMMAND = "perl"
                 let l:cmd = ":!time perl " . g:test_class_perl_args . " " . l:path
             else
+                let $PERL_TEST_COMMAND = "prove"
                 let l:cmd = ":!unbuffer prove " . g:test_class_prove_args . " " . l:path
             endif
 
@@ -273,6 +275,7 @@ endfunction
 
 function! ProveTestAll()
     write
+    let $PERL_TEST_COMMAND = "prove"
     let $TEST_METHOD = ""
     let l:path = expand('%:p')
 
