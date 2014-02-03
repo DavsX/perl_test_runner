@@ -155,7 +155,7 @@ if g:test_class_path != ''
     let g:test_class_path = g:test_class_path . '/'
 endif
 if g:test_class_path_prefix != ''
-    let g:test_class_path = g:test_class_path_prefix . '/'
+    let g:test_class_path = g:test_class_path . g:test_class_path_prefix . '/'
 endif
 " }}}
 " }}}
