@@ -63,7 +63,7 @@ function! s:RunTestFile(tool)
     execute l:cmd
 endfunction
 
-function! ProveTestAll()
+function! PerlTestAll()
     write
     let $PERL_TEST_COMMAND = "prove"
     let $TEST_METHOD = ""
