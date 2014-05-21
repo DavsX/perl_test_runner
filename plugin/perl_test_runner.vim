@@ -1,7 +1,7 @@
-if exists('g:perl_test_loaded')
+if exists('g:perl_test_runner_loaded')
     finish
 endif
-let g:perl_test_loaded = 1
+let g:perl_test_runner_loaded = 1
 
 " Plugin settings {{{
 if !exists('g:perl_test_args_perl')
@@ -34,7 +34,18 @@ function! s:GetTestPath()
     endif
 endfunction
 
-" s:RunTestFile {{{
+function! PerlTestCreate()
+    let l:path = expand('%')
+
+    let l:path = substitute(l:path, 'lib/', 't/', '')
+    let l:path = substitute(l:path, '.pm', '', '')
+
+    execute "silent :!mkdir -p ".l:path." > /dev/null 2>&1"
+    redraw!
+
+    execute ":e ".l:path."/"
+endfunction
+
 function! s:RunTestFile(tool)
     write
 
@@ -51,7 +62,6 @@ function! s:RunTestFile(tool)
     silent !clear
     execute l:cmd
 endfunction
-" }}}
 
 function! ProveTestAll()
     write
@@ -62,16 +72,11 @@ function! ProveTestAll()
     execute ":!unbuffer " . g:perl_test_all_command . " " . g:perl_test_args_prove . " t/"
 endfunction
 
-function! ProveTestFile()
-    let $TEST_METHOD = ""
-    call s:RunTestFile('prove')
-endfunction
-
 function! PerlTestFile()
     let $TEST_METHOD = ""
     call s:RunTestFile('perl')
 endfunction
 
 command! PerlTestFile     :call PerlTestFile()
-command! ProveTestFile    :call ProveTestFile()
-command! ProveTestAll     :call ProveTestAll()
+command! PerlTestAll      :call PerlTestAll()
+command! PerlTestCreate   :call PerlTestCreate()
