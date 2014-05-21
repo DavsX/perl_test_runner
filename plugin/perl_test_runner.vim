@@ -43,8 +43,7 @@ function! PerlTestCreate()
     execute "silent :!mkdir -p ".l:path." > /dev/null 2>&1"
     redraw!
 
-    " execute ":e ".l:path."/"
-    call feedkeys(':e '.l:path.'/')
+    call feedkeys(':vs '.l:path.'/')
 endfunction
 
 function! s:RunTestFile(tool)
