@@ -46,6 +46,18 @@ function! PerlTestCreate()
     call feedkeys(':vs '.l:path.'/')
 endfunction
 
+function! PerlTestDirOpen()
+    let l:path = expand('%')
+
+    let l:path = substitute(l:path, 'lib/', 't/', '')
+    let l:path = substitute(l:path, '.pm', '', '')
+
+    execute "silent :!mkdir -p ".l:path." > /dev/null 2>&1"
+    redraw!
+
+    execute ":vs ".l:path."/"
+endfunction
+
 function! s:RunTestFile(tool)
     write
 
@@ -80,3 +92,4 @@ endfunction
 command! PerlTestFile     :call PerlTestFile()
 command! PerlTestAll      :call PerlTestAll()
 command! PerlTestCreate   :call PerlTestCreate()
+command! PerlTestDirOpen  :call PerlTestDirOpen()
