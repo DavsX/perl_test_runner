@@ -51,7 +51,6 @@ function! PerlTestDirOpen()
 
     let l:path = substitute(l:path, 'lib/', 't/', '')
     let l:path = substitute(l:path, '.pm', '', '')
-    let l:path = substitute(l:path, '\v/.*?\.t', '', '')
 
     execute "silent :!mkdir -p ".l:path." > /dev/null 2>&1"
     redraw!
