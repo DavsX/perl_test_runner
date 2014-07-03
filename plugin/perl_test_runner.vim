@@ -49,7 +49,7 @@ endfunction
 function! PerlTestDirOpen()
     let l:path = expand('%')
 
-    if s:Path_is_test_inside_t(l:path)
+    if s:Path_is_test_inside_t(expand('%:p'))
         execute ":e %:h"
     else
         let l:path = substitute(l:path, 'lib/', 't/', '')
