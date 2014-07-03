@@ -49,13 +49,17 @@ endfunction
 function! PerlTestDirOpen()
     let l:path = expand('%')
 
-    let l:path = substitute(l:path, 'lib/', 't/', '')
-    let l:path = substitute(l:path, '.pm', '', '')
+    if s:Path_is_test_inside_t(l:path)
+        execute ":e %:h"
+    else
+        let l:path = substitute(l:path, 'lib/', 't/', '')
+        let l:path = substitute(l:path, '.pm', '', '')
 
-    execute "silent :!mkdir -p ".l:path." > /dev/null 2>&1"
-    redraw!
+        execute "silent :!mkdir -p ".l:path." > /dev/null 2>&1"
+        redraw!
 
-    execute ":vs ".l:path."/"
+        execute ":vs ".l:path."/"
+    endif
 endfunction
 
 function! s:RunTestFile(tool)
