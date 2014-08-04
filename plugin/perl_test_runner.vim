@@ -97,14 +97,16 @@ function! PerlTestDir()
     let l:path = expand('%')
 
     if s:Path_is_test_inside_t(expand('%:p'))
-        let l:path = expand('%:p:h')
+        let l:path = expand('%:h')
     else
         let l:path = substitute(l:path, 'lib/', 't/', '')
         let l:path = substitute(l:path, '.pm', '', '')
     endif
 
+    echom "PerlTestDir: " . l:path
+
     silent !clear
-    execute ":!unbuffer " . g:perl_test_all_command . " " . g:perl_test_args_prove . " " . l:path
+    execute ":!unbuffer prove " . g:perl_test_args_prove . " " . l:path
 endfunction
 
 command! PerlTestFile     :call PerlTestFile()
