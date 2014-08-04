@@ -63,8 +63,6 @@ function! PerlTestDirOpen()
 endfunction
 
 function! s:RunTestFile(tool)
-    write
-
     let l:path = s:GetTestPath()
 
     if a:tool ==? 'perl'
@@ -82,18 +80,35 @@ endfunction
 function! PerlTestAll()
     write
     let $PERL_TEST_COMMAND = "prove"
-    let $TEST_METHOD = ""
 
     silent !clear
     execute ":!unbuffer " . g:perl_test_all_command . " " . g:perl_test_args_prove . " t/"
 endfunction
 
 function! PerlTestFile()
-    let $TEST_METHOD = ""
+    write
     call s:RunTestFile('perl')
+endfunction
+
+function! PerlTestDir()
+    write
+    let $PERL_TEST_COMMAND = "prove"
+
+    let l:path = expand('%')
+
+    if s:Path_is_test_inside_t(expand('%:p'))
+        let l:path = expand('%:p:h')
+    else
+        let l:path = substitute(l:path, 'lib/', 't/', '')
+        let l:path = substitute(l:path, '.pm', '', '')
+    endif
+
+    silent !clear
+    execute ":!unbuffer " . g:perl_test_all_command . " " . g:perl_test_args_prove . " " . l:path
 endfunction
 
 command! PerlTestFile     :call PerlTestFile()
 command! PerlTestAll      :call PerlTestAll()
+command! PerlTestDir      :call PerlTestDir()
 command! PerlTestCreate   :call PerlTestCreate()
 command! PerlTestDirOpen  :call PerlTestDirOpen()
