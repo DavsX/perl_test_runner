@@ -1,71 +1,73 @@
+" Import guard {{{
 if exists('g:vim_test_runner_loaded')
     "finish
 endif
 let g:vim_test_runner_loaded = 1
-
-" Plugin settings {{{
-if !exists('g:perl_test_file_args')
-    let g:perl_test_file_args = '-It/lib -Ilib'
-endif
-
-if !exists('g:perl_test_all_args')
-    let g:perl_test_all_args = '-It/lib -Ilib'
-endif
-
-if !exists('g:perl_test_file_command')
-    let g:perl_test_file_command = 'perl '.g:perl_test_file_args
-endif
-
-if !exists('g:perl_test_all_command')
-    let g:perl_test_all_command = 'unbuffer prove '.g:perl_test_all_args
-endif
 " }}}
 
-function! s:Path_is_test_inside_t(path)
-    return a:path =~# '^' . '.\+' . '/t/' . '.\+' . '\.t$'
+" Plugin settings {{{
+let g:test_runner_single_args = get( g:, 'test_runner_single_args', '' )
+let g:test_runner_single_command = get( g:, 'test_runner_single_command', 'bash' )
+let g:test_runner_multiple_args = get( g:, 'test_runner_multiple_args', '' )
+let g:test_runner_multiple_command = get( g:, 'test_runner_multiple_command', 'bash' )
+let g:test_runner_test_dir = get( g:, 'test_runner_test_dir', 'test' )
+let g:test_runner_lib_dir = get( g:, 'test_runner_lib_dir', 'lib' )
+let g:test_runner_test_ext = get( g:, 'test_runner_test_ext', '' )
+let g:test_runner_test_prefix = get( g:, 'test_runner_test_prefix', '' )
+let g:test_runner_test_suffix = get( g:, 'test_runner_test_suffix', '' )
+let g:test_runner_code_ext = get( g:, 'test_runner_code_ext', '' )
+" }}}
+
+function! Is_test_file_in_test_dir(path)
+    return a:path =~# '^.\+'
+       \ .'/'.g:test_runner_test_dir.'/'
+       \ .g:test_runner_test_prefix.'.\+'.g:test_runner_test_suffix
+       \ .'\.'.g:test_runner_test_ext.'$'
 endfunction
 
-function! s:GetTestPath()
+function! Get_single_test_path()
     let l:path = expand('%:p')
 
-    if s:Path_is_test_inside_t(l:path)
-        let g:perl_test_last_path = l:path
+    if Is_test_file_in_test_dir(l:path)
+        let g:vim_test_last_test = l:path
         return l:path
     else
-        if exists('g:perl_test_last_path')
-            return g:perl_test_last_path
+        if exists('g:vim_test_last_test')
+            return g:vim_test_last_test
         endif
     endif
 endfunction
 
-function! PerlTestCreate()
-    let l:path = expand('%')
+function! Build_test_file_path(path)
+    let l:path = a:path
+    let l:path = substitute(l:path, g:test_runner_lib_dir.'/', g:test_runner_test_dir.'/', '')
+    let l:path = substitute(l:path, '\.'.g:test_runner_code_ext.'$', '', '')
+    return l:path
+endfunction
 
-    let l:path = substitute(l:path, 'lib/', 't/', '')
-    let l:path = substitute(l:path, '.pm', '', '')
+function! Create_test_file()
+    let l:path = Build_test_file_path(expand('%'))
 
-    execute "silent :!mkdir -p ".l:path." >> /tmp/perl_test_runner_log 2>&1"
+    execute "silent :!mkdir -p ".l:path." >> /tmp/vim_test_runner_log 2>&1"
     redraw!
 
     call feedkeys(':vs '.l:path.'/')
 endfunction
 
-function! PerlTestDirOpen()
+function! Open_test_dir()
     let l:path = expand('%')
 
-    if s:Path_is_test_inside_t(expand('%:p'))
+    if Is_test_file_in_test_dir(expand('%:p'))
         execute ":e %:h"
     else
-        let l:path = substitute(l:path, 'lib/', 't/', '')
-        let l:path = substitute(l:path, '.pm', '', '')
-
-        execute "silent :!mkdir -p ".l:path." >> /tmp/perl_test_runner_log 2>&1"
+        let l:path = Build_test_file_path(l:path)
+        execute "silent :!mkdir -p ".l:path." >> /tmp/vim_test_runner_log 2>&1"
         redraw!
-
         execute ":vs ".l:path."/"
     endif
 endfunction
 
+<<<<<<< HEAD
 function! s:RunTestFile(tool)
     let l:path = s:GetTestPath()
 
@@ -82,7 +84,7 @@ function! PerlTestAll()
     execute ":!" . g:perl_test_all_command . " t/"
 endfunction
 
-function! PerlTestFile()
+function! Run_command(cmd)
     write
     call s:RunTestFile(g:perl_test_file_command)
 endfunction
@@ -92,21 +94,18 @@ function! PerlTestDir()
 
     let l:path = expand('%')
 
-    if s:Path_is_test_inside_t(expand('%:p'))
+    if Is_test_file_in_test_dir(expand('%:p'))
         let l:path = expand('%:h')
     else
-        let l:path = substitute(l:path, 'lib/', 't/', '')
-        let l:path = substitute(l:path, '.pm', '', '')
+        let l:path = Build_test_file_path(l:path)
     endif
 
-    echom "PerlTestDir: " . l:path
-
-    silent !clear
-    execute ":!" . g:perl_test_all_command . " " . l:path
+    let l:cmd = ':!unbuffer '.g:test_runner_multiple_command.' '.g:test_runner_multiple_args.' '.l:path
+    call Run_command(l:cmd)
 endfunction
 
-command! PerlTestFile     :call PerlTestFile()
-command! PerlTestAll      :call PerlTestAll()
-command! PerlTestDir      :call PerlTestDir()
-command! PerlTestCreate   :call PerlTestCreate()
-command! PerlTestDirOpen  :call PerlTestDirOpen()
+command! Run_single_test  :call Run_single_test()
+command! Run_all_tests    :call Run_all_tests()
+command! Run_tests_in_dir :call Run_tests_in_dir()
+command! Create_test_file :call Create_test_file()
+command! Open_test_dir    :call Open_test_dir()
