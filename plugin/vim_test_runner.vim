@@ -1,7 +1,7 @@
-if exists('g:perl_test_runner_loaded')
-    finish
+if exists('g:vim_test_runner_loaded')
+    "finish
 endif
-let g:perl_test_runner_loaded = 1
+let g:vim_test_runner_loaded = 1
 
 " Plugin settings {{{
 if !exists('g:perl_test_file_args')
