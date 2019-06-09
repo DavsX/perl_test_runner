@@ -4,16 +4,20 @@ endif
 let g:perl_test_runner_loaded = 1
 
 " Plugin settings {{{
-if !exists('g:perl_test_args_perl')
-    let g:perl_test_args_perl = '-It/lib -Ilib'
+if !exists('g:perl_test_file_args')
+    let g:perl_test_file_args = '-It/lib -Ilib'
 endif
 
-if !exists('g:perl_test_args_prove')
-    let g:perl_test_args_prove = '-It/lib -Ilib'
+if !exists('g:perl_test_all_args')
+    let g:perl_test_all_args = '-It/lib -Ilib'
+endif
+
+if !exists('g:perl_test_file_command')
+    let g:perl_test_file_command = 'perl '.g:perl_test_file_args
 endif
 
 if !exists('g:perl_test_all_command')
-    let g:perl_test_all_command = 'prove'
+    let g:perl_test_all_command = 'unbuffer prove '.g:perl_test_all_args
 endif
 " }}}
 
@@ -65,13 +69,7 @@ endfunction
 function! s:RunTestFile(tool)
     let l:path = s:GetTestPath()
 
-    if a:tool ==? 'perl'
-        let $PERL_TEST_COMMAND = "perl"
-        let l:cmd = ":!time perl " . g:perl_test_args_perl . " " . l:path
-    else
-        let $PERL_TEST_COMMAND = "prove"
-        let l:cmd = ":!unbuffer prove " . g:perl_test_args_prove . " " . l:path
-    endif
+    let l:cmd = ":!" . a:tool . " " . l:path
 
     silent !clear
     execute l:cmd
@@ -79,20 +77,18 @@ endfunction
 
 function! PerlTestAll()
     write
-    let $PERL_TEST_COMMAND = "prove"
 
     silent !clear
-    execute ":!unbuffer " . g:perl_test_all_command . " " . g:perl_test_args_prove . " t/"
+    execute ":!" . g:perl_test_all_command . " t/"
 endfunction
 
 function! PerlTestFile()
     write
-    call s:RunTestFile('perl')
+    call s:RunTestFile(g:perl_test_file_command)
 endfunction
 
 function! PerlTestDir()
     write
-    let $PERL_TEST_COMMAND = "prove"
 
     let l:path = expand('%')
 
@@ -106,7 +102,7 @@ function! PerlTestDir()
     echom "PerlTestDir: " . l:path
 
     silent !clear
-    execute ":!unbuffer prove " . g:perl_test_args_prove . " " . l:path
+    execute ":!" . g:perl_test_all_command . " " . l:path
 endfunction
 
 command! PerlTestFile     :call PerlTestFile()
