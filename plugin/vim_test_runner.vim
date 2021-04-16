@@ -18,17 +18,17 @@ let g:test_runner_test_suffix      = get( g:, 'test_runner_test_suffix', '' )
 let g:test_runner_code_ext         = get( g:, 'test_runner_code_ext', '' )
 " }}}
 
-function! s:Is_test_file_in_test_dir(path)
+function! s:IsTestFileInsideTestDir(path)
     return a:path =~# '^.\+'
        \ .'/'.g:test_runner_test_dir.'/.\{-}'
        \ .g:test_runner_test_prefix.'.\+'.g:test_runner_test_suffix
        \ .'\.'.g:test_runner_test_ext.'$'
 endfunction
 
-function! s:Get_single_test_path()
+function! s:GetSingleTestPath()
     let l:path = expand('%:p')
 
-    if s:Is_test_file_in_test_dir(l:path)
+    if s:IsTestFileInsideTestDir(l:path)
         let g:vim_test_last_test = l:path
         return l:path
     else
@@ -38,15 +38,15 @@ function! s:Get_single_test_path()
     endif
 endfunction
 
-function! s:Build_test_file_path(path)
+function! s:BuildTestFilePath(path)
     let l:path = a:path
     let l:path = substitute(l:path, g:test_runner_lib_dir.'/', g:test_runner_test_dir.'/', '')
     let l:path = substitute(l:path, '\.'.g:test_runner_code_ext.'$', '', '')
     return l:path
 endfunction
 
-function! s:Create_test_file()
-    let l:path = s:Build_test_file_path(expand('%'))
+function! s:CreateTestFile()
+    let l:path = s:BuildTestFilePath(expand('%'))
 
     execute "silent :!mkdir -p ".l:path." >> /tmp/vim_test_runner_log 2>&1"
     redraw!
@@ -54,51 +54,51 @@ function! s:Create_test_file()
     call feedkeys(':vs '.l:path.'/')
 endfunction
 
-function! s:Open_test_dir()
+function! s:OpenTestDir()
     let l:path = expand('%')
 
-    if s:Is_test_file_in_test_dir(expand('%:p'))
+    if s:IsTestFileInsideTestDir(expand('%:p'))
         execute ":e %:h"
     else
-        let l:path = s:Build_test_file_path(l:path)
+        let l:path = s:BuildTestFilePath(l:path)
         execute "silent :!mkdir -p ".l:path." >> /tmp/vim_test_runner_log 2>&1"
         redraw!
         execute ":vs ".l:path."/"
     endif
 endfunction
 
-function! s:Run_single_test()
-    let l:path = s:Get_single_test_path()
+function! s:RunSingleTest()
+    let l:path = s:GetSingleTestPath()
     let l:cmd = ':!unbuffer '.g:test_runner_single_command.' '.g:test_runner_single_args.' '.l:path
-    call s:Run_command(l:cmd)
+    call s:RunCommand(l:cmd)
 endfunction
 
-function! s:Run_all_tests()
+function! s:RunAllTests()
     let l:cmd = ':!unbuffer '.g:test_runner_multiple_command.' '.g:test_runner_multiple_args.' '.g:test_runner_test_dir
-    call s:Run_command(l:cmd)
+    call s:RunCommand(l:cmd)
 endfunction
 
-function! s:Run_command(cmd)
+function! s:RunCommand(cmd)
     write
     silent !clear
     execute a:cmd
 endfunction
 
-function! s:Run_tests_in_dir()
+function! s:RunTestsInDir()
     let l:path = expand('%')
 
-    if s:Is_test_file_in_test_dir(expand('%:p'))
+    if s:IsTestFileInsideTestDir(expand('%:p'))
         let l:path = expand('%:h')
     else
-        let l:path = s:Build_test_file_path(l:path)
+        let l:path = s:BuildTestFilePath(l:path)
     endif
 
     let l:cmd = ':!unbuffer '.g:test_runner_multiple_command.' '.g:test_runner_multiple_args.' '.l:path
-    call s:Run_command(l:cmd)
+    call s:RunCommand(l:cmd)
 endfunction
 
-command! RunSingleTest  :call <SID>Run_single_test()
-command! RunAllTests    :call <SID>Run_all_tests()
-command! RunTestsInDir  :call <SID>Run_tests_in_dir()
-command! CreateTestFile :call <SID>Create_test_file()
-command! OpenTestDir    :call <SID>Open_test_dir()
+command! RunSingleTest  :call <SID>RunSingleTest()
+command! RunAllTests    :call <SID>RunAllTests()
+command! RunTestsInDir  :call <SID>RunTestsInDir()
+command! CreateTestFile :call <SID>CreateTestFile()
+command! OpenTestDir    :call <SID>OpenTestDir()
