@@ -1,0 +1,2 @@
+gem 'vimrunner'
+gem 'rspec'
