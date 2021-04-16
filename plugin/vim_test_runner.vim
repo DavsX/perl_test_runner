@@ -80,7 +80,8 @@ endfunction
 
 function! s:Run_command(cmd)
     write
-    call s:RunTestFile(g:perl_test_file_command)
+    silent !clear
+    execute a:cmd
 endfunction
 
 function! s:Run_tests_in_dir()
